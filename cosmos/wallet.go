@@ -18,8 +18,8 @@ import (
 type Wallet struct {
 	privKey cryptotypes.PrivKey
 
-	txConfig client.TxConfig
-	client   *Client
+	TxConfig client.TxConfig
+	Client   *Client
 }
 
 // NewWallet allows to build a new Wallet instance
@@ -48,8 +48,8 @@ func NewWallet(accountCfg *types.AccountConfig, client *Client, txConfig client.
 
 	return &Wallet{
 		privKey:  privKey,
-		txConfig: txConfig,
-		client:   client,
+		TxConfig: txConfig,
+		Client:   client,
 	}, nil
 }
 
@@ -62,13 +62,13 @@ func (w *Wallet) AccAddress() string {
 // having the
 func (w *Wallet) BroadCastTx(msgs ...sdk.Msg) (*sdk.TxResponse, error) {
 	// Get the account
-	account, err := w.client.GetAccount(w.AccAddress())
+	account, err := w.Client.GetAccount(w.AccAddress())
 	if err != nil {
 		return nil, fmt.Errorf("error while getting the account from the chain: %s", err)
 	}
 
-	builder := w.txConfig.NewTxBuilder()
-	builder.SetFeeAmount(w.client.GetFees(200000))
+	builder := w.TxConfig.NewTxBuilder()
+	builder.SetFeeAmount(w.Client.GetFees(200000))
 	builder.SetGasLimit(200000)
 	err = builder.SetMsgs(msgs...)
 	if err != nil {
@@ -91,7 +91,7 @@ func (w *Wallet) BroadCastTx(msgs ...sdk.Msg) (*sdk.TxResponse, error) {
 		return nil, err
 	}
 
-	chainID, err := w.client.GetChainID()
+	chainID, err := w.Client.GetChainID()
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (w *Wallet) BroadCastTx(msgs ...sdk.Msg) (*sdk.TxResponse, error) {
 		},
 		builder,
 		w.privKey,
-		w.txConfig,
+		w.TxConfig,
 		account.GetSequence(),
 	)
 	if err != nil {
@@ -118,5 +118,5 @@ func (w *Wallet) BroadCastTx(msgs ...sdk.Msg) (*sdk.TxResponse, error) {
 		return nil, err
 	}
 
-	return w.client.BroadcastTx(builder.GetTx())
+	return w.Client.BroadcastTx(builder.GetTx())
 }
