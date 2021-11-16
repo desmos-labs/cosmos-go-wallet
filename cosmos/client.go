@@ -18,6 +18,7 @@ import (
 
 // Client represents a Cosmos client that should be used to interact with a chain
 type Client struct {
+	prefix    string
 	Codec     codec.Codec
 	RPCClient rpcclient.Client
 	GRPCConn  *grpc.ClientConn
@@ -52,6 +53,10 @@ func NewClient(config *types.ChainConfig, codec codec.Codec) (*Client, error) {
 		AuthClient: authtypes.NewQueryClient(grpcConn),
 		GasPrice:   gasPrice,
 	}, nil
+}
+
+func (c *Client) GetAccountPrefix() string {
+	return c.prefix
 }
 
 // GetChainID returns the chain id associated to this client

@@ -3,6 +3,8 @@ package cosmos
 import (
 	"fmt"
 
+	"github.com/cosmos/cosmos-sdk/types/bech32"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
@@ -30,24 +32,9 @@ func NewWallet(accountCfg *types.AccountConfig, client *Client, txConfig client.
 	if err != nil {
 		return nil, err
 	}
-	privKey := algo.Generate()(derivedPriv)
-
-	// Build the config
-	prefix := accountCfg.Bech32Prefix
-	sdkCfg := sdk.GetConfig()
-	sdkCfg.SetBech32PrefixForAccount(prefix, prefix+sdk.PrefixPublic)
-	sdkCfg.SetBech32PrefixForValidator(
-		prefix+sdk.PrefixValidator+sdk.PrefixOperator,
-		prefix+sdk.PrefixValidator+sdk.PrefixOperator+sdk.PrefixPublic,
-	)
-	sdkCfg.SetBech32PrefixForConsensusNode(
-		prefix+sdk.PrefixValidator+sdk.PrefixConsensus,
-		prefix+sdk.PrefixValidator+sdk.PrefixConsensus+sdk.PrefixPublic,
-	)
-	sdkCfg.Seal()
 
 	return &Wallet{
-		privKey:  privKey,
+		privKey:  algo.Generate()(derivedPriv),
 		TxConfig: txConfig,
 		Client:   client,
 	}, nil
@@ -55,7 +42,11 @@ func NewWallet(accountCfg *types.AccountConfig, client *Client, txConfig client.
 
 // AccAddress returns the address of the account that is going to be used to sign the transactions
 func (w *Wallet) AccAddress() string {
-	return sdk.AccAddress(w.privKey.PubKey().Address()).String()
+	bech32Addr, err := bech32.ConvertAndEncode(w.Client.GetAccountPrefix(), w.privKey.PubKey().Address())
+	if err != nil {
+		panic(err)
+	}
+	return bech32Addr
 }
 
 // BroadCastTx creates and signs a transaction with the provided messages and fees, signed from the account
