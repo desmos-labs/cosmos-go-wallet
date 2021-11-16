@@ -48,6 +48,7 @@ func NewClient(config *types.ChainConfig, codec codec.Codec) (*Client, error) {
 	}
 
 	return &Client{
+		prefix:     config.Bech32Prefix,
 		Codec:      codec,
 		RPCClient:  client,
 		GRPCConn:   grpcConn,
