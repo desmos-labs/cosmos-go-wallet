@@ -3,6 +3,8 @@ package cosmos
 import (
 	"context"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/types/bech32"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -55,8 +57,32 @@ func NewClient(config *types.ChainConfig, codec codec.Codec) (*Client, error) {
 	}, nil
 }
 
+// GetAccountPrefix returns the account prefix to be used when serializing addresses as Bech32
 func (c *Client) GetAccountPrefix() string {
 	return c.prefix
+}
+
+// ParseAddress parses the given address as an sdk.AccAddress instance
+func (n *Client) ParseAddress(address string) (sdk.AccAddress, error) {
+	if len(strings.TrimSpace(address)) == 0 {
+		return nil, fmt.Errorf("empty address string is not allowed")
+	}
+
+	prefix, bz, err := bech32.DecodeAndConvert(address)
+	if err != nil {
+		return nil, err
+	}
+
+	if prefix != n.GetAccountPrefix() {
+		return nil, fmt.Errorf("invalid bech32 prefix: exptected %s, got %s", n.GetAccountPrefix(), prefix)
+	}
+
+	err = sdk.VerifyAddressFormat(bz)
+	if err != nil {
+		return nil, err
+	}
+
+	return bz, nil
 }
 
 // GetChainID returns the chain id associated to this client
