@@ -64,6 +64,11 @@ func (c *Client) GetChainID() (string, error) {
 	return res.NodeInfo.Network, nil
 }
 
+// GetFeeDenom returns the denom used to pay for fees, based on the gas price inside the config
+func (c *Client) GetFeeDenom() string {
+	return c.GasPrice.Denom
+}
+
 // GetFees returns the fees that should be paid to perform a transaction with the given gas
 func (c *Client) GetFees(gas int64) sdk.Coins {
 	return sdk.NewCoins(sdk.NewCoin(c.GasPrice.Denom, c.GasPrice.Amount.MulInt64(gas).TruncateInt()))
