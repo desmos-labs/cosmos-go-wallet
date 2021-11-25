@@ -49,9 +49,40 @@ func (w *Wallet) AccAddress() string {
 	return bech32Addr
 }
 
-// BroadCastTx creates and signs a transaction with the provided messages and fees, signed from the account
-// having the
-func (w *Wallet) BroadCastTx(msgs ...sdk.Msg) (*sdk.TxResponse, error) {
+// BroadcastTxAsync creates and signs a transaction with the provided messages and fees,
+// then broadcasts it using the async method
+func (w *Wallet) BroadcastTxAsync(msgs ...sdk.Msg) (*sdk.TxResponse, error) {
+	builder, err := w.buildTx(msgs)
+	if err != nil {
+		return nil, err
+	}
+
+	return w.Client.BroadcastTxAsync(builder.GetTx())
+}
+
+// BroadcastTxSync creates and signs a transaction with the provided messages and fees,
+// then broadcasts it using the sync method
+func (w *Wallet) BroadcastTxSync(msgs ...sdk.Msg) (*sdk.TxResponse, error) {
+	builder, err := w.buildTx(msgs)
+	if err != nil {
+		return nil, err
+	}
+
+	return w.Client.BroadcastTxSync(builder.GetTx())
+}
+
+// BroadcastTxCommit creates and signs a transaction with the provided messages and fees,
+// then broadcasts it using the commit method
+func (w *Wallet) BroadcastTxCommit(msgs ...sdk.Msg) (*sdk.TxResponse, error) {
+	builder, err := w.buildTx(msgs)
+	if err != nil {
+		return nil, err
+	}
+
+	return w.Client.BroadcastTxCommit(builder.GetTx())
+}
+
+func (w *Wallet) buildTx(msgs []sdk.Msg) (client.TxBuilder, error) {
 	// Get the account
 	account, err := w.Client.GetAccount(w.AccAddress())
 	if err != nil {
@@ -109,5 +140,5 @@ func (w *Wallet) BroadCastTx(msgs ...sdk.Msg) (*sdk.TxResponse, error) {
 		return nil, err
 	}
 
-	return w.Client.BroadcastTxCommit(builder.GetTx())
+	return builder, nil
 }
