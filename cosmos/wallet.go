@@ -109,5 +109,5 @@ func (w *Wallet) BroadCastTx(msgs ...sdk.Msg) (*sdk.TxResponse, error) {
 		return nil, err
 	}
 
-	return w.Client.BroadcastTx(builder.GetTx())
+	return w.Client.BroadcastTxCommit(builder.GetTx())
 }

@@ -3,8 +3,9 @@ package cosmos
 import (
 	"context"
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/types/bech32"
 	"strings"
+
+	"github.com/cosmos/cosmos-sdk/types/bech32"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -122,8 +123,40 @@ func (c *Client) GetAccount(address string) (authtypes.AccountI, error) {
 	return account, nil
 }
 
-// BroadcastTx allows to broadcast a transaction containing the given messages
-func (c *Client) BroadcastTx(tx signing.Tx) (*sdk.TxResponse, error) {
+// BroadcastTxAsync allows to broadcast a transaction containing the given messages using the sync method
+func (c *Client) BroadcastTxAsync(tx signing.Tx) (*sdk.TxResponse, error) {
+	bytes, err := c.txEncoder(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := c.RPCClient.BroadcastTxAsync(context.Background(), bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	// Broadcast the transaction to a Tendermint node
+	return sdk.NewResponseFormatBroadcastTx(res), nil
+}
+
+// BroadcastTxSync allows to broadcast a transaction containing the given messages using the sync method
+func (c *Client) BroadcastTxSync(tx signing.Tx) (*sdk.TxResponse, error) {
+	bytes, err := c.txEncoder(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := c.RPCClient.BroadcastTxSync(context.Background(), bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	// Broadcast the transaction to a Tendermint node
+	return sdk.NewResponseFormatBroadcastTx(res), nil
+}
+
+// BroadcastTxCommit allows to broadcast a transaction containing the given messages using the commit method
+func (c *Client) BroadcastTxCommit(tx signing.Tx) (*sdk.TxResponse, error) {
 	bytes, err := c.txEncoder(tx)
 	if err != nil {
 		return nil, err
