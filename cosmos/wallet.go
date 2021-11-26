@@ -20,8 +20,9 @@ import (
 type Wallet struct {
 	privKey cryptotypes.PrivKey
 
-	TxConfig client.TxConfig
-	Client   *Client
+	gasPerMsg int64
+	TxConfig  client.TxConfig
+	Client    *Client
 }
 
 // NewWallet allows to build a new Wallet instance
@@ -38,6 +39,11 @@ func NewWallet(accountCfg *types.AccountConfig, client *Client, txConfig client.
 		TxConfig: txConfig,
 		Client:   client,
 	}, nil
+}
+
+// SetGasPerMessage allows to set the amount of gas to be used per message
+func (w Wallet) SetGasPerMessage(gas int64) {
+	w.gasPerMsg = gas
 }
 
 // AccAddress returns the address of the account that is going to be used to sign the transactions
@@ -89,9 +95,10 @@ func (w *Wallet) buildTx(msgs []sdk.Msg) (client.TxBuilder, error) {
 		return nil, fmt.Errorf("error while getting the account from the chain: %s", err)
 	}
 
+	var gasLimit = w.gasPerMsg * int64(len(msgs))
 	builder := w.TxConfig.NewTxBuilder()
-	builder.SetFeeAmount(w.Client.GetFees(200000))
-	builder.SetGasLimit(200000)
+	builder.SetFeeAmount(w.Client.GetFees(gasLimit))
+	builder.SetGasLimit(uint64(gasLimit))
 	err = builder.SetMsgs(msgs...)
 	if err != nil {
 		return nil, err
