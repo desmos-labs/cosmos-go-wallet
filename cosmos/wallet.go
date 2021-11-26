@@ -35,9 +35,10 @@ func NewWallet(accountCfg *types.AccountConfig, client *Client, txConfig client.
 	}
 
 	return &Wallet{
-		privKey:  algo.Generate()(derivedPriv),
-		TxConfig: txConfig,
-		Client:   client,
+		privKey:   algo.Generate()(derivedPriv),
+		gasPerMsg: 200_000, // Default to 200,000 gas per message
+		TxConfig:  txConfig,
+		Client:    client,
 	}, nil
 }
 
