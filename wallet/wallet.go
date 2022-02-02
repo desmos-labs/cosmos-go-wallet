@@ -1,7 +1,8 @@
-package Cosmos_Go_Wallet
+package wallet
 
 import (
 	"fmt"
+	client2 "github.com/desmos-labs/cosmos-go-wallet/client"
 
 	"github.com/cosmos/cosmos-sdk/types/bech32"
 
@@ -22,11 +23,11 @@ type Wallet struct {
 
 	gasPerMsg int64
 	TxConfig  client.TxConfig
-	Client    *Client
+	Client    *client2.Client
 }
 
 // NewWallet allows to build a new Wallet instance
-func NewWallet(accountCfg *types.AccountConfig, client *Client, txConfig client.TxConfig) (*Wallet, error) {
+func NewWallet(accountCfg *types.AccountConfig, client *client2.Client, txConfig client.TxConfig) (*Wallet, error) {
 	// Get the private types
 	algo := hd.Secp256k1
 	derivedPriv, err := algo.Derive()(accountCfg.Mnemonic, "", accountCfg.HDPath)

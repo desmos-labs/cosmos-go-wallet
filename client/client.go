@@ -1,4 +1,4 @@
-package Cosmos_Go_Wallet
+package client
 
 import (
 	"context"
