@@ -1,4 +1,4 @@
-package cosmos
+package types
 
 import (
 	"crypto/tls"

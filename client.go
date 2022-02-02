@@ -1,4 +1,4 @@
-package cosmos
+package Cosmos_Go_Wallet
 
 import (
 	"context"
@@ -38,7 +38,7 @@ func NewClient(config *types.ChainConfig, codec codec.Codec) (*Client, error) {
 		return nil, err
 	}
 
-	grpcConn, err := CreateGrpcConnection(config.GRPCAddr)
+	grpcConn, err := types.CreateGrpcConnection(config.GRPCAddr)
 	if err != nil {
 		return nil, fmt.Errorf("error while creating a GRPC connection: %s", err)
 	}

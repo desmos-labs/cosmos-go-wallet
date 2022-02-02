@@ -1,4 +1,4 @@
-package cosmos
+package Cosmos_Go_Wallet
 
 import (
 	"fmt"
@@ -58,8 +58,8 @@ func (w *Wallet) AccAddress() string {
 
 // BroadcastTxAsync creates and signs a transaction with the provided messages and fees,
 // then broadcasts it using the async method
-func (w *Wallet) BroadcastTxAsync(msgs ...sdk.Msg) (*sdk.TxResponse, error) {
-	builder, err := w.buildTx(msgs)
+func (w *Wallet) BroadcastTxAsync(data *types.TransactionData) (*sdk.TxResponse, error) {
+	builder, err := w.buildTx(data)
 	if err != nil {
 		return nil, err
 	}
@@ -69,8 +69,8 @@ func (w *Wallet) BroadcastTxAsync(msgs ...sdk.Msg) (*sdk.TxResponse, error) {
 
 // BroadcastTxSync creates and signs a transaction with the provided messages and fees,
 // then broadcasts it using the sync method
-func (w *Wallet) BroadcastTxSync(msgs ...sdk.Msg) (*sdk.TxResponse, error) {
-	builder, err := w.buildTx(msgs)
+func (w *Wallet) BroadcastTxSync(data *types.TransactionData) (*sdk.TxResponse, error) {
+	builder, err := w.buildTx(data)
 	if err != nil {
 		return nil, err
 	}
@@ -80,8 +80,8 @@ func (w *Wallet) BroadcastTxSync(msgs ...sdk.Msg) (*sdk.TxResponse, error) {
 
 // BroadcastTxCommit creates and signs a transaction with the provided messages and fees,
 // then broadcasts it using the commit method
-func (w *Wallet) BroadcastTxCommit(msgs ...sdk.Msg) (*sdk.TxResponse, error) {
-	builder, err := w.buildTx(msgs)
+func (w *Wallet) BroadcastTxCommit(data *types.TransactionData) (*sdk.TxResponse, error) {
+	builder, err := w.buildTx(data)
 	if err != nil {
 		return nil, err
 	}
@@ -89,18 +89,28 @@ func (w *Wallet) BroadcastTxCommit(msgs ...sdk.Msg) (*sdk.TxResponse, error) {
 	return w.Client.BroadcastTxCommit(builder.GetTx())
 }
 
-func (w *Wallet) buildTx(msgs []sdk.Msg) (client.TxBuilder, error) {
+func (w *Wallet) buildTx(data *types.TransactionData) (client.TxBuilder, error) {
 	// Get the account
 	account, err := w.Client.GetAccount(w.AccAddress())
 	if err != nil {
 		return nil, fmt.Errorf("error while getting the account from the chain: %s", err)
 	}
 
-	var gasLimit = w.gasPerMsg * int64(len(msgs))
+	gasLimit := data.GasLimit
+	if gasLimit == 0 {
+		gasLimit = uint64(w.gasPerMsg) * uint64(len(data.Messages))
+	}
+
+	feeAmount := data.FeeAmount
+	if len(feeAmount) == 0 {
+		feeAmount = w.Client.GetFees(int64(gasLimit))
+	}
+
 	builder := w.TxConfig.NewTxBuilder()
-	builder.SetFeeAmount(w.Client.GetFees(gasLimit))
-	builder.SetGasLimit(uint64(gasLimit))
-	err = builder.SetMsgs(msgs...)
+	builder.SetFeeAmount(feeAmount)
+	builder.SetGasLimit(gasLimit)
+	builder.SetMemo(data.Memo)
+	err = builder.SetMsgs(data.Messages...)
 	if err != nil {
 		return nil, err
 	}
