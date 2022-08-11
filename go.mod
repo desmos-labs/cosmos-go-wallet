@@ -1,10 +1,10 @@
 module github.com/desmos-labs/cosmos-go-wallet
 
-go 1.17
+go 1.18
 
 require (
-	github.com/cosmos/cosmos-sdk v0.45.4
-	github.com/tendermint/tendermint v0.34.20
+	github.com/cosmos/cosmos-sdk v0.45.5
+	github.com/tendermint/tendermint v0.34.19
 	google.golang.org/grpc v1.48.0
 )
 
@@ -22,7 +22,7 @@ require (
 	github.com/confio/ics23/go v0.7.0 // indirect
 	github.com/cosmos/btcutil v1.0.4 // indirect
 	github.com/cosmos/go-bip39 v1.0.0 // indirect
-	github.com/cosmos/iavl v0.19.0 // indirect
+	github.com/cosmos/iavl v0.17.3 // indirect
 	github.com/cosmos/ledger-cosmos-go v0.11.1 // indirect
 	github.com/cosmos/ledger-go v0.9.2 // indirect
 	github.com/danieljoos/wincred v1.0.2 // indirect
