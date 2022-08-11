@@ -3,7 +3,7 @@ module github.com/desmos-labs/cosmos-go-wallet
 go 1.18
 
 require (
-	github.com/cosmos/cosmos-sdk v0.45.7
+	github.com/cosmos/cosmos-sdk v0.45.5
 	github.com/tendermint/tendermint v0.34.20
 	google.golang.org/grpc v1.48.0
 )
