@@ -1,3 +1,7 @@
+# Version 0.3.0
+## Dependencies
+- Updated Cosmos SDK to `v0.45.7`
+
 # Version 0.2.0
 ## Dependencies
 - Updated Cosmos SDK to `v0.45.6`
