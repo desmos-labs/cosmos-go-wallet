@@ -107,10 +107,16 @@ func (w *Wallet) buildTx(data *types.TransactionData) (client.TxBuilder, error) 
 		feeAmount = w.Client.GetFees(int64(gasLimit))
 	}
 
+	// Build the transaction
 	builder := w.TxConfig.NewTxBuilder()
 	builder.SetFeeAmount(feeAmount)
 	builder.SetGasLimit(gasLimit)
-	builder.SetMemo(data.Memo)
+	if data.Memo != "" {
+		builder.SetMemo(data.Memo)
+	}
+	if data.FeeGranter != nil {
+		builder.SetFeeGranter(data.FeeGranter)
+	}
 	err = builder.SetMsgs(data.Messages...)
 	if err != nil {
 		return nil, err
