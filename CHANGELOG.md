@@ -1,3 +1,8 @@
+# Version 0.5.0
+## Features
+- Set min TLS version to `1.2` when connecting to gRPC endpoints
+- Removed `Wallet#SetGasPerMessage`. `TransactionData#WithFeeAuto` and `TransactionData#WithGasAuto` should be used instead
+
 # Version 0.4.0
 ## Features
 - Added `WithGasAuto` and `WithFeeAuto` to `TransactionData` in order to allow auto computing the gas and fee amount by simulating the transaction
