@@ -1,3 +1,7 @@
+# Version 0.5.1
+## Bug fixes
+- Fixed a bug in the gas and fees simulation process
+
 # Version 0.5.0
 ## Features
 - Set min TLS version to `1.2` when connecting to gRPC endpoints
