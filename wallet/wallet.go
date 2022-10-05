@@ -3,31 +3,31 @@ package wallet
 import (
 	"fmt"
 
-	client2 "github.com/desmos-labs/cosmos-go-wallet/client"
-
-	"github.com/cosmos/cosmos-sdk/types/bech32"
-
-	"github.com/cosmos/cosmos-sdk/client"
+	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/bech32"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
+	"github.com/desmos-labs/cosmos-go-wallet/client"
 	"github.com/desmos-labs/cosmos-go-wallet/types"
 )
 
-// Wallet represents a Cosmos cosmos that should be used to create and send transactions to the chain
+// Wallet represents a Cosmos wallet that should be used to create and send transactions to the chain
 type Wallet struct {
 	privKey cryptotypes.PrivKey
 
-	TxConfig client.TxConfig
-	Client   *client2.Client
+	TxConfig sdkclient.TxConfig
+	Client   *client.Client
 }
 
 // NewWallet allows to build a new Wallet instance
-func NewWallet(accountCfg *types.AccountConfig, client *client2.Client, txConfig client.TxConfig) (*Wallet, error) {
+func NewWallet(accountCfg *types.AccountConfig, client *client.Client, txConfig sdkclient.TxConfig) (*Wallet, error) {
 	// Get the private types
 	algo := hd.Secp256k1
 	derivedPriv, err := algo.Derive()(accountCfg.Mnemonic, "", accountCfg.HDPath)
@@ -54,7 +54,7 @@ func (w *Wallet) AccAddress() string {
 // BroadcastTxAsync creates and signs a transaction with the provided messages and fees,
 // then broadcasts it using the async method
 func (w *Wallet) BroadcastTxAsync(data *types.TransactionData) (*sdk.TxResponse, error) {
-	builder, err := w.buildTx(data)
+	builder, err := w.BuildTx(data)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func (w *Wallet) BroadcastTxAsync(data *types.TransactionData) (*sdk.TxResponse,
 // BroadcastTxSync creates and signs a transaction with the provided messages and fees,
 // then broadcasts it using the sync method
 func (w *Wallet) BroadcastTxSync(data *types.TransactionData) (*sdk.TxResponse, error) {
-	builder, err := w.buildTx(data)
+	builder, err := w.BuildTx(data)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func (w *Wallet) BroadcastTxSync(data *types.TransactionData) (*sdk.TxResponse, 
 // BroadcastTxCommit creates and signs a transaction with the provided messages and fees,
 // then broadcasts it using the commit method
 func (w *Wallet) BroadcastTxCommit(data *types.TransactionData) (*sdk.TxResponse, error) {
-	builder, err := w.buildTx(data)
+	builder, err := w.BuildTx(data)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func (w *Wallet) BroadcastTxCommit(data *types.TransactionData) (*sdk.TxResponse
 	return w.Client.BroadcastTxCommit(builder.GetTx())
 }
 
-func (w *Wallet) buildTx(data *types.TransactionData) (client.TxBuilder, error) {
+func (w *Wallet) BuildTx(data *types.TransactionData) (sdkclient.TxBuilder, error) {
 	// Get the account
 	account, err := w.Client.GetAccount(w.AccAddress())
 	if err != nil {
@@ -104,10 +104,28 @@ func (w *Wallet) buildTx(data *types.TransactionData) (client.TxBuilder, error) 
 		return nil, err
 	}
 
+	gasLimit := data.GasLimit
+	if data.GasAuto {
+		adjusted, err := w.simulateTx(account, builder)
+		if err != nil {
+			return nil, err
+		}
+		gasLimit = adjusted
+	}
+
+	feeAmount := data.FeeAmount
+	if data.FeeAuto {
+		// Compute the fee amount based on the gas limit and the gas price
+		feeAmount = w.Client.GetFees(int64(gasLimit))
+	}
+
+	// Set the new gas and fee
+	builder.SetGasLimit(gasLimit)
+	builder.SetFeeAmount(feeAmount)
+
 	// Set an empty signature first
 	sigData := signing.SingleSignatureData{
-		SignMode:  signing.SignMode_SIGN_MODE_DIRECT,
-		Signature: nil,
+		SignMode: signing.SignMode_SIGN_MODE_DIRECT,
 	}
 	sig := signing.SignatureV2{
 		PubKey:   w.privKey.PubKey(),
@@ -147,25 +165,33 @@ func (w *Wallet) buildTx(data *types.TransactionData) (client.TxBuilder, error) 
 		return nil, err
 	}
 
-	gasLimit := data.GasLimit
-	if data.GasAuto {
-		// Simulate the execution of the transaction
-		adjusted, err := w.Client.SimulateTx(builder.GetTx())
-		if err != nil {
-			return nil, fmt.Errorf("error while simulating tx: %s", err)
-		}
-		gasLimit = adjusted
-	}
-
-	feeAmount := data.FeeAmount
-	if data.FeeAuto {
-		// Compute the fee amount based on the gas limit and the gas price
-		feeAmount = w.Client.GetFees(int64(gasLimit))
-	}
-
-	// Set the new gas and fee
-	builder.SetGasLimit(gasLimit)
-	builder.SetFeeAmount(feeAmount)
-
 	return builder, nil
+}
+
+// simulateTx simulates the given transaction and returns the amount of adjusted gas that should be used
+func (w *Wallet) simulateTx(account authtypes.AccountI, builder sdkclient.TxBuilder) (uint64, error) {
+	// Create an empty signature literal as the ante handler will populate with a
+	// sentinel pubkey.
+	sig := signing.SignatureV2{
+		PubKey: &secp256k1.PubKey{},
+		Data: &signing.SingleSignatureData{
+			SignMode: signing.SignMode_SIGN_MODE_DIRECT,
+		},
+		Sequence: account.GetSequence(),
+	}
+	err := builder.SetSignatures(sig)
+	if err != nil {
+		return 0, err
+	}
+
+	// Set a fake amount of gas and fees
+	builder.SetGasLimit(200_000)
+	builder.SetFeeAmount(w.Client.GetFees(int64(200_000)))
+
+	// Simulate the execution of the transaction
+	adjusted, err := w.Client.SimulateTx(builder.GetTx())
+	if err != nil {
+		return 0, fmt.Errorf("error while simulating tx: %s", err)
+	}
+	return adjusted, nil
 }
