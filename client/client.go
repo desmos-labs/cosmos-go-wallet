@@ -3,9 +3,11 @@ package client
 import (
 	"context"
 	"fmt"
+	"math"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/types/bech32"
+	sdktx "github.com/cosmos/cosmos-sdk/types/tx"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -28,7 +30,10 @@ type Client struct {
 	txEncoder sdk.TxEncoder
 
 	AuthClient authtypes.QueryClient
-	GasPrice   sdk.DecCoin
+	TxClient   sdktx.ServiceClient
+
+	GasPrice      sdk.DecCoin
+	GasAdjustment float64
 }
 
 // NewClient returns a new Client instance
@@ -49,13 +54,15 @@ func NewClient(config *types.ChainConfig, codec codec.Codec) (*Client, error) {
 	}
 
 	return &Client{
-		prefix:     config.Bech32Prefix,
-		Codec:      codec,
-		RPCClient:  client,
-		GRPCConn:   grpcConn,
-		txEncoder:  tx.DefaultTxEncoder(),
-		AuthClient: authtypes.NewQueryClient(grpcConn),
-		GasPrice:   gasPrice,
+		prefix:        config.Bech32Prefix,
+		Codec:         codec,
+		RPCClient:     client,
+		GRPCConn:      grpcConn,
+		txEncoder:     tx.DefaultTxEncoder(),
+		AuthClient:    authtypes.NewQueryClient(grpcConn),
+		TxClient:      sdktx.NewServiceClient(grpcConn),
+		GasPrice:      gasPrice,
+		GasAdjustment: math.Max(config.GasAdjustment, 1.5),
 	}, nil
 }
 
@@ -121,6 +128,24 @@ func (c *Client) GetAccount(address string) (authtypes.AccountI, error) {
 	}
 
 	return account, nil
+}
+
+// SimulateTx simulates the execution of the given transaction, and returns the adjusted
+// amount of gas that should be used in order to properly execute it
+func (c *Client) SimulateTx(tx signing.Tx) (uint64, error) {
+	bytes, err := c.txEncoder(tx)
+	if err != nil {
+		return 0, err
+	}
+
+	simRes, err := c.TxClient.Simulate(context.Background(), &sdktx.SimulateRequest{
+		TxBytes: bytes,
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	return uint64(c.GasAdjustment * float64(simRes.GasInfo.GasUsed)), nil
 }
 
 // BroadcastTxAsync allows to broadcast a transaction containing the given messages using the sync method

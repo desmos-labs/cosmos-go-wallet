@@ -7,7 +7,9 @@ type TransactionData struct {
 	Messages   []sdk.Msg
 	Memo       string
 	GasLimit   uint64
+	GasAuto    bool
 	FeeAmount  sdk.Coins
+	FeeAuto    bool
 	FeeGranter sdk.AccAddress
 }
 
@@ -30,9 +32,21 @@ func (t *TransactionData) WithGasLimit(limit uint64) *TransactionData {
 	return t
 }
 
+// WithGasAuto allows to automatically compute the amount of gas to be used when broadcasting the transaction
+func (t *TransactionData) WithGasAuto() *TransactionData {
+	t.GasAuto = true
+	return t
+}
+
 // WithFeeAmount allows to set the given fee amount
 func (t *TransactionData) WithFeeAmount(amount sdk.Coins) *TransactionData {
 	t.FeeAmount = amount
+	return t
+}
+
+// WithAutoFee allows to automatically compute the fee amount to be used when broadcasting the transaction
+func (t *TransactionData) WithAutoFee() *TransactionData {
+	t.FeeAuto = true
 	return t
 }
 

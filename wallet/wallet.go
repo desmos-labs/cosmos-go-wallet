@@ -2,6 +2,7 @@ package wallet
 
 import (
 	"fmt"
+
 	client2 "github.com/desmos-labs/cosmos-go-wallet/client"
 
 	"github.com/cosmos/cosmos-sdk/types/bech32"
@@ -97,20 +98,8 @@ func (w *Wallet) buildTx(data *types.TransactionData) (client.TxBuilder, error) 
 		return nil, fmt.Errorf("error while getting the account from the chain: %s", err)
 	}
 
-	gasLimit := data.GasLimit
-	if gasLimit == 0 {
-		gasLimit = uint64(w.gasPerMsg) * uint64(len(data.Messages))
-	}
-
-	feeAmount := data.FeeAmount
-	if len(feeAmount) == 0 {
-		feeAmount = w.Client.GetFees(int64(gasLimit))
-	}
-
 	// Build the transaction
 	builder := w.TxConfig.NewTxBuilder()
-	builder.SetFeeAmount(feeAmount)
-	builder.SetGasLimit(gasLimit)
 	if data.Memo != "" {
 		builder.SetMemo(data.Memo)
 	}
@@ -164,6 +153,26 @@ func (w *Wallet) buildTx(data *types.TransactionData) (client.TxBuilder, error) 
 	if err != nil {
 		return nil, err
 	}
+
+	gasLimit := data.GasLimit
+	if data.GasAuto {
+		// Simulate the execution of the transaction
+		adjusted, err := w.Client.SimulateTx(builder.GetTx())
+		if err != nil {
+			return nil, fmt.Errorf("error while simulating tx: %s", err)
+		}
+		gasLimit = adjusted
+	}
+
+	feeAmount := data.FeeAmount
+	if data.FeeAuto {
+		// Compute the fee amount based on the gas limit and the gas price
+		feeAmount = w.Client.GetFees(int64(gasLimit))
+	}
+
+	// Set the new gas and fee
+	builder.SetGasLimit(gasLimit)
+	builder.SetFeeAmount(feeAmount)
 
 	return builder, nil
 }
