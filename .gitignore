@@ -1,2 +1,9 @@
+# IDEs
+.vscode/
+.idea/
+
 # Config
 *.yaml
+
+# Code coverage
+coverage.txt
