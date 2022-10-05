@@ -22,9 +22,8 @@ import (
 type Wallet struct {
 	privKey cryptotypes.PrivKey
 
-	gasPerMsg int64
-	TxConfig  client.TxConfig
-	Client    *client2.Client
+	TxConfig client.TxConfig
+	Client   *client2.Client
 }
 
 // NewWallet allows to build a new Wallet instance
@@ -37,16 +36,10 @@ func NewWallet(accountCfg *types.AccountConfig, client *client2.Client, txConfig
 	}
 
 	return &Wallet{
-		privKey:   algo.Generate()(derivedPriv),
-		gasPerMsg: 200_000, // Default to 200,000 gas per message
-		TxConfig:  txConfig,
-		Client:    client,
+		privKey:  algo.Generate()(derivedPriv),
+		TxConfig: txConfig,
+		Client:   client,
 	}, nil
-}
-
-// SetGasPerMessage allows to set the amount of gas to be used per message
-func (w Wallet) SetGasPerMessage(gas int64) {
-	w.gasPerMsg = gas
 }
 
 // AccAddress returns the address of the account that is going to be used to sign the transactions
