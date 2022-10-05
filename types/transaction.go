@@ -44,8 +44,8 @@ func (t *TransactionData) WithFeeAmount(amount sdk.Coins) *TransactionData {
 	return t
 }
 
-// WithAutoFee allows to automatically compute the fee amount to be used when broadcasting the transaction
-func (t *TransactionData) WithAutoFee() *TransactionData {
+// WithFeeAuto allows to automatically compute the fee amount to be used when broadcasting the transaction
+func (t *TransactionData) WithFeeAuto() *TransactionData {
 	t.FeeAuto = true
 	return t
 }
