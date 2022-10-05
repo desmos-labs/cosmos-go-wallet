@@ -3,6 +3,9 @@ package wallet
 import (
 	"fmt"
 
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+
 	client2 "github.com/desmos-labs/cosmos-go-wallet/client"
 
 	"github.com/cosmos/cosmos-sdk/types/bech32"
@@ -104,10 +107,28 @@ func (w *Wallet) buildTx(data *types.TransactionData) (client.TxBuilder, error) 
 		return nil, err
 	}
 
+	gasLimit := data.GasLimit
+	if data.GasAuto {
+		adjusted, err := w.simulateTx(account, builder)
+		if err != nil {
+			return nil, err
+		}
+		gasLimit = adjusted
+	}
+
+	feeAmount := data.FeeAmount
+	if data.FeeAuto {
+		// Compute the fee amount based on the gas limit and the gas price
+		feeAmount = w.Client.GetFees(int64(gasLimit))
+	}
+
+	// Set the new gas and fee
+	builder.SetGasLimit(gasLimit)
+	builder.SetFeeAmount(feeAmount)
+
 	// Set an empty signature first
 	sigData := signing.SingleSignatureData{
-		SignMode:  signing.SignMode_SIGN_MODE_DIRECT,
-		Signature: nil,
+		SignMode: signing.SignMode_SIGN_MODE_DIRECT,
 	}
 	sig := signing.SignatureV2{
 		PubKey:   w.privKey.PubKey(),
@@ -147,25 +168,33 @@ func (w *Wallet) buildTx(data *types.TransactionData) (client.TxBuilder, error) 
 		return nil, err
 	}
 
-	gasLimit := data.GasLimit
-	if data.GasAuto {
-		// Simulate the execution of the transaction
-		adjusted, err := w.Client.SimulateTx(builder.GetTx())
-		if err != nil {
-			return nil, fmt.Errorf("error while simulating tx: %s", err)
-		}
-		gasLimit = adjusted
-	}
-
-	feeAmount := data.FeeAmount
-	if data.FeeAuto {
-		// Compute the fee amount based on the gas limit and the gas price
-		feeAmount = w.Client.GetFees(int64(gasLimit))
-	}
-
-	// Set the new gas and fee
-	builder.SetGasLimit(gasLimit)
-	builder.SetFeeAmount(feeAmount)
-
 	return builder, nil
+}
+
+// simulateTx simulates the given transaction and returns the amount of adjusted gas that should be used
+func (w *Wallet) simulateTx(account authtypes.AccountI, builder client.TxBuilder) (uint64, error) {
+	// Create an empty signature literal as the ante handler will populate with a
+	// sentinel pubkey.
+	sig := signing.SignatureV2{
+		PubKey: &secp256k1.PubKey{},
+		Data: &signing.SingleSignatureData{
+			SignMode: signing.SignMode_SIGN_MODE_DIRECT,
+		},
+		Sequence: account.GetSequence(),
+	}
+	err := builder.SetSignatures(sig)
+	if err != nil {
+		return 0, err
+	}
+
+	// Set a fake amount of gas and fees
+	builder.SetGasLimit(200_000)
+	builder.SetFeeAmount(w.Client.GetFees(int64(200_000)))
+
+	// Simulate the execution of the transaction
+	adjusted, err := w.Client.SimulateTx(builder.GetTx())
+	if err != nil {
+		return 0, fmt.Errorf("error while simulating tx: %s", err)
+	}
+	return adjusted, nil
 }
