@@ -1,0 +1,80 @@
+run:
+  tests: false
+  timeout: 5m
+  skip-dirs:
+    - pkg
+
+linters:
+  disable-all: true
+  enable:
+    - bodyclose
+    - deadcode
+    - depguard
+    - dogsled
+    - exportloopref
+    - goconst
+    - gocritic
+    - gofmt
+    - goimports
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - nakedret
+    - nolintlint
+    - staticcheck
+    - structcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+
+issues:
+  exclude-rules:
+    - text: "Use of weak random number generator"
+      linters:
+        - gosec
+    - text: "comment on exported var"
+      linters:
+        - golint
+    - text: "don't use an underscore in package name"
+      linters:
+        - golint
+    - text: "ST1003:"
+      linters:
+        - stylecheck
+
+    # FIXME: Disabled until golangci-lint updates stylecheck with this fix:
+    # https://github.com/dominikh/go-tools/issues/389
+    - text: "ST1016:"
+      linters:
+        - stylecheck
+
+    # TODO: Remove these when we are ready to drop support for Legacy Amino
+    - text: 'SA1019: "github.com/cosmos/cosmos-sdk/types/bech32/legacybech32" is deprecated'
+      linters:
+        - staticcheck
+    - text: "SA1019: legacybech32.UnmarshalPubKey is deprecated"
+      linters:
+        - staticcheck
+
+    - path: "migrations"
+      text: "SA1019:"
+      linters:
+        - staticcheck
+  max-issues-per-linter: 10000
+  max-same-issues: 10000
+
+linters-settings:
+  dogsled:
+    max-blank-identifiers: 3
+  maligned:
+    # print struct with more effective memory layout or not, false by default
+    suggest-new: true
+  nolintlint:
+    allow-unused: false
+    allow-leading-space: true
+    require-explanation: false
+    require-specific: false
