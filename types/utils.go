@@ -17,7 +17,9 @@ var (
 func CreateGrpcConnection(address string) (*grpc.ClientConn, error) {
 	var grpcOpts []grpc.DialOption
 	if strings.HasPrefix(address, "https") {
-		grpcOpts = append(grpcOpts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
+		grpcOpts = append(grpcOpts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+			MinVersion: tls.VersionTLS12,
+		})))
 	} else {
 		grpcOpts = append(grpcOpts, grpc.WithInsecure())
 	}
