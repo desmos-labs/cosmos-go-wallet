@@ -1,3 +1,7 @@
+# Version 0.6.0
+## Dependencies
+- Updated Cosmos SDK to `v0.47.2`
+
 # Version 0.5.1
 ## Bug fixes
 - Fixed a bug in the gas and fees simulation process
