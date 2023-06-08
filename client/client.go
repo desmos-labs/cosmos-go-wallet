@@ -9,13 +9,13 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/bech32"
 	sdktx "github.com/cosmos/cosmos-sdk/types/tx"
 
+	rpcclient "github.com/cometbft/cometbft/rpc/client"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/signing"
 	"github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	"google.golang.org/grpc"
 
 	"github.com/desmos-labs/cosmos-go-wallet/types"
@@ -193,5 +193,5 @@ func (c *Client) BroadcastTxCommit(tx signing.Tx) (*sdk.TxResponse, error) {
 	}
 
 	// Broadcast the transaction to a Tendermint node
-	return sdk.NewResponseFormatBroadcastTxCommit(res), nil
+	return NewResponseFormatBroadcastTxCommit(res), nil
 }
