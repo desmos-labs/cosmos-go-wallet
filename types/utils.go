@@ -7,6 +7,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 var (
@@ -15,15 +16,13 @@ var (
 
 // CreateGrpcConnection creates a new gRPC client connection from the given configuration
 func CreateGrpcConnection(address string) (*grpc.ClientConn, error) {
-	var grpcOpts []grpc.DialOption
+	var transportCredentials credentials.TransportCredentials
 	if strings.HasPrefix(address, "https") {
-		grpcOpts = append(grpcOpts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-			MinVersion: tls.VersionTLS12,
-		})))
+		transportCredentials = credentials.NewTLS(&tls.Config{MinVersion: tls.VersionTLS12})
 	} else {
-		grpcOpts = append(grpcOpts, grpc.WithInsecure())
+		transportCredentials = insecure.NewCredentials()
 	}
 
 	address = HTTPProtocols.ReplaceAllString(address, "")
-	return grpc.Dial(address, grpcOpts...)
+	return grpc.Dial(address, grpc.WithTransportCredentials(transportCredentials))
 }
