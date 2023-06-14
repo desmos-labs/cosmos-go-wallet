@@ -98,7 +98,7 @@ func (n *Client) ParseAddress(address string) (sdk.AccAddress, error) {
 func (c *Client) GetChainID() (string, error) {
 	res, err := c.RPCClient.Status(context.Background())
 	if err != nil {
-		return "", fmt.Errorf("error while gestting chain id: %s", err)
+		return "", fmt.Errorf("error while getting chain id: %s", err)
 	}
 
 	return res.NodeInfo.Network, nil
