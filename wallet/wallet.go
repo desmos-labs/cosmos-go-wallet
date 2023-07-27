@@ -91,6 +91,11 @@ func (w *Wallet) BuildTx(data *types.TransactionData) (sdkclient.TxBuilder, erro
 		return nil, fmt.Errorf("error while getting the account from the chain: %s", err)
 	}
 
+	sequence := account.GetSequence()
+	if data.Sequence != nil {
+		sequence = *data.Sequence
+	}
+
 	// Build the transaction
 	builder := w.TxConfig.NewTxBuilder()
 	if data.Memo != "" {
@@ -106,7 +111,7 @@ func (w *Wallet) BuildTx(data *types.TransactionData) (sdkclient.TxBuilder, erro
 
 	gasLimit := data.GasLimit
 	if data.GasAuto {
-		adjusted, err := w.simulateTx(account, builder)
+		adjusted, err := w.simulateTx(account, builder, sequence)
 		if err != nil {
 			return nil, err
 		}
@@ -130,7 +135,7 @@ func (w *Wallet) BuildTx(data *types.TransactionData) (sdkclient.TxBuilder, erro
 	sig := signing.SignatureV2{
 		PubKey:   w.privKey.PubKey(),
 		Data:     &sigData,
-		Sequence: account.GetSequence(),
+		Sequence: sequence,
 	}
 
 	err = builder.SetSignatures(sig)
@@ -149,12 +154,12 @@ func (w *Wallet) BuildTx(data *types.TransactionData) (sdkclient.TxBuilder, erro
 		authsigning.SignerData{
 			ChainID:       chainID,
 			AccountNumber: account.GetAccountNumber(),
-			Sequence:      account.GetSequence(),
+			Sequence:      sequence,
 		},
 		builder,
 		w.privKey,
 		w.TxConfig,
-		account.GetSequence(),
+		sequence,
 	)
 	if err != nil {
 		return nil, err
@@ -169,7 +174,7 @@ func (w *Wallet) BuildTx(data *types.TransactionData) (sdkclient.TxBuilder, erro
 }
 
 // simulateTx simulates the given transaction and returns the amount of adjusted gas that should be used
-func (w *Wallet) simulateTx(account authtypes.AccountI, builder sdkclient.TxBuilder) (uint64, error) {
+func (w *Wallet) simulateTx(account authtypes.AccountI, builder sdkclient.TxBuilder, sequence uint64) (uint64, error) {
 	// Create an empty signature literal as the ante handler will populate with a
 	// sentinel pubkey.
 	sig := signing.SignatureV2{
@@ -177,7 +182,7 @@ func (w *Wallet) simulateTx(account authtypes.AccountI, builder sdkclient.TxBuil
 		Data: &signing.SingleSignatureData{
 			SignMode: signing.SignMode_SIGN_MODE_DIRECT,
 		},
-		Sequence: account.GetSequence(),
+		Sequence: sequence,
 	}
 	err := builder.SetSignatures(sig)
 	if err != nil {
