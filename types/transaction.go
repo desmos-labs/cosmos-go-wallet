@@ -15,9 +15,9 @@ type TransactionData struct {
 }
 
 // NewTransactionData builds a new TransactionData instance
-func NewTransactionData(msg sdk.Msg, msgs ...sdk.Msg) *TransactionData {
+func NewTransactionData(msgs ...sdk.Msg) *TransactionData {
 	return &TransactionData{
-		Messages: append(msgs, msg),
+		Messages: msgs,
 	}
 }
 
