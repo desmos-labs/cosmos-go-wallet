@@ -6,6 +6,7 @@ import (
 
 	"cosmossdk.io/simapp"
 	simappparams "cosmossdk.io/simapp/params"
+	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/std"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -67,24 +68,50 @@ func (suite *WalletTestSuite) SetupSuite() {
 }
 
 func (suite *WalletTestSuite) TestBuildTx() {
-	sender, err := sdk.AccAddressFromBech32(suite.wallet.AccAddress())
-	suite.Require().NoError(err)
+	testCases := []struct {
+		name      string
+		msgs      []sdk.Msg
+		shouldErr bool
+		check     func(builder sdkclient.TxBuilder)
+	}{
+		{
+			name:      "empty messages returns error",
+			shouldErr: true,
+		},
+		{
+			name: "valid messages returns no error",
+			msgs: []sdk.Msg{
+				banktypes.NewMsgSend(
+					sdk.MustAccAddressFromBech32(suite.wallet.AccAddress()),
+					sdk.MustAccAddressFromBech32("desmos1q62k9kvjy7v2wh0yt9jqaepnzezz3s49j9gnpk"),
+					sdk.NewCoins(sdk.NewCoin("udaric", sdk.NewInt(10000))),
+				),
+			},
+			check: func(builder sdkclient.TxBuilder) {
+				tx := builder.GetTx()
+				suite.Require().Lessf(tx.GetGas(), uint64(200_000), "MsgSend should take less than 200.000 gas")
+				suite.Require().NotEmptyf(tx.GetFee(), "Fees should not be empty")
+			},
+		},
+	}
 
-	receiver, err := sdk.AccAddressFromBech32("desmos1q62k9kvjy7v2wh0yt9jqaepnzezz3s49j9gnpk")
-	suite.Require().NoError(err)
+	for _, tc := range testCases {
+		tc := tc
+		suite.Run(tc.name, func() {
+			data := types.NewTransactionData(
+				tc.msgs...,
+			).WithGasAuto().WithFeeAuto().WithMemo("Custom memo").WithSequence(0)
 
-	data := types.NewTransactionData(
-		banktypes.NewMsgSend(
-			sender,
-			receiver,
-			sdk.NewCoins(sdk.NewCoin("udaric", sdk.NewInt(10000))),
-		),
-	).WithGasAuto().WithFeeAuto().WithMemo("Custom memo").WithSequence(0)
+			builder, err := suite.wallet.BuildTx(data)
+			if tc.shouldErr {
+				suite.Require().Error(err)
+			} else {
+				suite.Require().NoError(err)
+			}
 
-	builder, err := suite.wallet.BuildTx(data)
-	suite.Require().NoError(err)
-
-	tx := builder.GetTx()
-	suite.Require().Lessf(tx.GetGas(), uint64(200_000), "MsgSend should take less than 200.000 gas")
-	suite.Require().NotEmptyf(tx.GetFee(), "Fees should not be empty")
+			if tc.check != nil {
+				tc.check(builder)
+			}
+		})
+	}
 }
