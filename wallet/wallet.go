@@ -104,6 +104,11 @@ func (w *Wallet) BuildTx(data *types.TransactionData) (sdkclient.TxBuilder, erro
 	if data.FeeGranter != nil {
 		builder.SetFeeGranter(data.FeeGranter)
 	}
+
+	if len(data.Messages) == 0 {
+		return nil, fmt.Errorf("error while building a transaction with no messages")
+	}
+
 	err = builder.SetMsgs(data.Messages...)
 	if err != nil {
 		return nil, err
