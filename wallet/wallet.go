@@ -91,6 +91,11 @@ func (w *Wallet) BuildTx(data *types.TransactionData) (sdkclient.TxBuilder, erro
 		return nil, fmt.Errorf("error while getting the account from the chain: %s", err)
 	}
 
+	// Set account sequence
+	if data.Sequence != nil {
+		account.SetSequence(*data.Sequence)
+	}
+
 	// Build the transaction
 	builder := w.TxConfig.NewTxBuilder()
 	if data.Memo != "" {

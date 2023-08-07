@@ -11,6 +11,7 @@ type TransactionData struct {
 	FeeAmount  sdk.Coins
 	FeeAuto    bool
 	FeeGranter sdk.AccAddress
+	Sequence   *uint64
 }
 
 // NewTransactionData builds a new TransactionData instance
@@ -54,5 +55,11 @@ func (t *TransactionData) WithFeeAuto() *TransactionData {
 // To work properly, a fee grant must exist from the granter towards the transaction signer.
 func (t *TransactionData) WithFeeGranter(granter sdk.AccAddress) *TransactionData {
 	t.FeeGranter = granter
+	return t
+}
+
+// WithSequence allows to set the given sequence
+func (t *TransactionData) WithSequence(sequence uint64) *TransactionData {
+	t.Sequence = &sequence
 	return t
 }

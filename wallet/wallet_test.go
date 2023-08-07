@@ -79,7 +79,7 @@ func (suite *WalletTestSuite) TestBuildTx() {
 			receiver,
 			sdk.NewCoins(sdk.NewCoin("udaric", sdk.NewInt(10000))),
 		),
-	).WithGasAuto().WithFeeAuto().WithMemo("Custom memo")
+	).WithGasAuto().WithFeeAuto().WithMemo("Custom memo").WithSequence(0)
 
 	builder, err := suite.wallet.BuildTx(data)
 	suite.Require().NoError(err)
