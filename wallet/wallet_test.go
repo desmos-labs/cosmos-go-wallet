@@ -1,18 +1,18 @@
 package wallet_test
 
 import (
+	_ "embed"
 	"fmt"
 	"testing"
 
-	"cosmossdk.io/simapp"
-	simappparams "cosmossdk.io/simapp/params"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/std"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	_ "github.com/cosmos/cosmos-sdk/x/auth/tx/config" // import for side-effects
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/desmos-labs/cosmos-go-wallet/client"
+	"github.com/desmos-labs/cosmos-go-wallet/testutils"
 	"github.com/desmos-labs/cosmos-go-wallet/types"
 	"github.com/desmos-labs/cosmos-go-wallet/wallet"
 )
@@ -26,17 +26,6 @@ type WalletTestSuite struct {
 
 	wallet *wallet.Wallet
 	client *client.Client
-}
-
-// makeEncodingConfig returns the encoding config to be used for the tests
-// Note: This is copied from the simapp package since we cannot import it directly
-func (suite *WalletTestSuite) makeEncodingConfig() simappparams.EncodingConfig {
-	encodingConfig := simappparams.MakeTestEncodingConfig()
-	std.RegisterLegacyAminoCodec(encodingConfig.Amino)
-	std.RegisterInterfaces(encodingConfig.InterfaceRegistry)
-	simapp.ModuleBasics.RegisterLegacyAminoCodec(encodingConfig.Amino)
-	simapp.ModuleBasics.RegisterInterfaces(encodingConfig.InterfaceRegistry)
-	return encodingConfig
 }
 
 func (suite *WalletTestSuite) SetupSuite() {
@@ -56,7 +45,7 @@ func (suite *WalletTestSuite) SetupSuite() {
 	cfg := sdk.GetConfig()
 	cfg.SetBech32PrefixForAccount(chainCfg.Bech32Prefix, fmt.Sprintf("%spub", chainCfg.Bech32Prefix))
 
-	encodingCfg := suite.makeEncodingConfig()
+	encodingCfg := testutils.MakeTestEncodingConfig()
 
 	c, err := client.NewClient(&chainCfg, encodingCfg.Codec)
 	suite.Require().NoError(err)
