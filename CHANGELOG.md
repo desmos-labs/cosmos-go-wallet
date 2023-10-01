@@ -1,3 +1,7 @@
+# Version 0.7.2
+## Bug fixes
+- Fixed a bug in the fee amount computation
+
 # Version 0.7.1
 ## Bug fixes
 - Fixed a bug in the gas simulation process
