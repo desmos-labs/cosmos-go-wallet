@@ -1,3 +1,7 @@
+# Version 0.7.1
+## Bug fixes
+- Fixed a bug in the gas simulation process
+
 # Version 0.7.0
 ## Features
 - Added the ability to specify a sequence number when building a transaction 
