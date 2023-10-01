@@ -111,7 +111,7 @@ func (c *Client) GetFeeDenom() string {
 
 // GetFees returns the fees that should be paid to perform a transaction with the given gas
 func (c *Client) GetFees(gas int64) sdk.Coins {
-	return sdk.NewCoins(sdk.NewCoin(c.GasPrice.Denom, c.GasPrice.Amount.MulInt64(gas).TruncateInt()))
+	return sdk.NewCoins(sdk.NewCoin(c.GasPrice.Denom, c.GasPrice.Amount.MulInt64(gas).Ceil().RoundInt()))
 }
 
 // GetAccount returns the details of the account having the given address reading it from the chain
