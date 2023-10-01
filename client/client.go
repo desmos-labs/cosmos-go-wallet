@@ -145,7 +145,7 @@ func (c *Client) SimulateTx(tx signing.Tx) (uint64, error) {
 		return 0, err
 	}
 
-	return uint64(c.GasAdjustment * float64(simRes.GasInfo.GasUsed)), nil
+	return uint64(math.Ceil(c.GasAdjustment * float64(simRes.GasInfo.GasUsed))), nil
 }
 
 // BroadcastTxAsync allows to broadcast a transaction containing the given messages using the sync method
